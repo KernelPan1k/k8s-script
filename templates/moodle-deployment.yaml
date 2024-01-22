@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: moodle
+  namespace: moodle-ns
+  labels:
+    app: moodle
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: moodle
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moodle-pv-claim
+  namespace: moodle-ns
+  labels:
+    app: moodle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle
+  namespace: moodle-ns
+  labels:
+    app: moodle
+spec:
+  selector:
+    matchLabels:
+      app: moodle
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: moodle
+        tier: frontend
+    spec:
+      containers:
+      - image: moodledev:latest
+        imagePullPolicy: IfNotPresent
+        name: moodle
+        env:
+        - name: moodle_DB_HOST
+          value: moodle-mysql
+        - name: moodle_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        - name: moodle_DB_USER
+          value: moodle
+        ports:
+        - containerPort: 80
+          name: moodle
+        volumeMounts:
+        - name: moodle-persistent-storage
+          mountPath: /var/www/data
+      volumes:
+      - name: moodle-persistent-storage
+        persistentVolumeClaim:
+          claimName: moodle-pv-claim
