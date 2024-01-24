@@ -4,9 +4,9 @@ metadata:
   name: moodle-ns
 ---
 apiVersion: v1
+data:
+  password: cGFzc3dvcmQ=
 kind: Secret
 metadata:
   name: mysql-pass
   namespace: moodle-ns
-data:
-  password: cGFzc3dvcmQK
